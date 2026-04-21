@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CoC 7 角色卡</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="topbar">
+        <h1>克蘇魯的呼喚 CoC 7 角色卡</h1>
+        <div class="actions">
+          <button id="saveBtn" type="button">儲存</button>
+          <button id="clearBtn" type="button" class="danger">清除</button>
+        </div>
+      </header>
+
+      <p id="statusMessage" class="status" aria-live="polite"></p>
+
+      <nav class="tabbar" aria-label="分頁切換">
+        <button class="tab active" data-tab="stats">數值頁</button>
+        <button class="tab" data-tab="skills">技能頁</button>
+        <button class="tab" data-tab="background">背景故事頁</button>
+        <button class="tab" data-tab="notes">個人簡介 / 道具頁</button>
+      </nav>
+
+      <section id="stats" class="tab-panel active">
+        <div class="panel-grid">
+          <article class="card">
+            <h2>基本資料</h2>
+            <div class="grid cols-3">
+              <label>名字<input type="text" id="basic_name" /></label>
+              <label>年齡<input type="number" inputmode="numeric" id="basic_age" /></label>
+              <label>職業<input type="text" id="basic_job" /></label>
+            </div>
+          </article>
+
+          <article class="card">
+            <h2>屬性數值</h2>
+            <div class="grid cols-3 compact">
+              <label>STR <span id="check_attr_str" class="check-line">一般0 / 困難0 / 極難0</span><input type="number" inputmode="numeric" id="attr_str" /></label>
+              <label>DEX <span id="check_attr_dex" class="check-line">一般0 / 困難0 / 極難0</span><input type="number" inputmode="numeric" id="attr_dex" /></label>
+              <label>INT <span id="check_attr_int" class="check-line">一般0 / 困難0 / 極難0</span><input type="number" inputmode="numeric" id="attr_int" /></label>
+              <label>CON <span id="check_attr_con" class="check-line">一般0 / 困難0 / 極難0</span><input type="number" inputmode="numeric" id="attr_con" /></label>
+              <label>APP <span id="check_attr_app" class="check-line">一般0 / 困難0 / 極難0</span><input type="number" inputmode="numeric" id="attr_app" /></label>
+              <label>POW <span id="check_attr_pow" class="check-line">一般0 / 困難0 / 極難0</span><input type="number" inputmode="numeric" id="attr_pow" /></label>
+              <label>SIZ <span id="check_attr_siz" class="check-line">一般0 / 困難0 / 極難0</span><input type="number" inputmode="numeric" id="attr_siz" /></label>
+              <label>EDU <span id="check_attr_edu" class="check-line">一般0 / 困難0 / 極難0</span><input type="number" inputmode="numeric" id="attr_edu" /></label>
+              <label>MOV <span id="check_attr_mov" class="check-line">一般0 / 困難0 / 極難0</span><input type="number" inputmode="numeric" id="attr_mov" /></label>
+              <label>LUK <span id="check_attr_luk" class="check-line">一般0 / 困難0 / 極難0</span><input type="number" inputmode="numeric" id="attr_luk" /></label>
+              <label>Damage Bonus<input type="text" id="attr_damageBonus" /></label>
+              <label>體格<input type="text" id="attr_build" /></label>
+            </div>
+          </article>
+
+          <article class="card">
+            <h2>狀態數值</h2>
+            <div class="grid cols-3 compact">
+              <label>HP 現值<input type="number" inputmode="numeric" id="status_hpCurrent" /></label>
+              <label>HP 最大值<input type="number" inputmode="numeric" id="status_hpMax" /></label>
+              <span class="spacer" aria-hidden="true"></span>
+              <label>MP 現值<input type="number" inputmode="numeric" id="status_mpCurrent" /></label>
+              <label>MP 最大值<input type="number" inputmode="numeric" id="status_mpMax" /></label>
+              <span class="spacer" aria-hidden="true"></span>
+              <label>SAN 現值<input type="number" inputmode="numeric" id="status_sanCurrent" /></label>
+              <label>SAN 最大值<input type="number" inputmode="numeric" id="status_sanMax" /></label>
+              <span class="spacer" aria-hidden="true"></span>
+              <label>SAN 起始值<input type="number" inputmode="numeric" id="status_sanInitial" /></label>
+            </div>
+          </article>
+
+          <article class="card">
+            <h2>衍生資訊</h2>
+            <div class="derived">
+              <p><strong>4/5 SAN：</strong><span id="derived_fourFifths">0</span></p>
+              <p>單日累積失去 1/5 起始 SAN 時，可能進入不定性瘋狂。</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section id="skills" class="tab-panel">
+        <div class="panel-grid">
+          <article class="card">
+            <h2>職業技能（8 項）</h2>
+            <div id="occupationSkills" class="grid cols-2"></div>
+          </article>
+
+          <article class="card">
+            <h2>信用評級</h2>
+            <label>信用評級<input type="number" inputmode="numeric" id="skills_creditRating" /></label>
+          </article>
+
+          <article class="card">
+            <h2>興趣技能（4 項）</h2>
+            <div id="interestSkills" class="grid cols-2"></div>
+          </article>
+
+          <article class="card">
+            <h2>其他技能</h2>
+            <label>其他技能<input type="text" id="skills_other" /></label>
+          </article>
+        </div>
+      </section>
+
+      <section id="background" class="tab-panel">
+        <div class="panel-grid">
+          <article class="card">
+            <h2>背景故事</h2>
+            <div class="grid cols-2">
+              <label>個人描述<textarea id="bg_description" rows="3"></textarea></label>
+              <label>意識形態 / 信念<textarea id="bg_belief" rows="3"></textarea></label>
+              <label>重要之人<textarea id="bg_person" rows="3"></textarea></label>
+              <label>意義之地<textarea id="bg_place" rows="3"></textarea></label>
+              <label>珍重之物<textarea id="bg_item" rows="3"></textarea></label>
+              <label>特質<textarea id="bg_trait" rows="3"></textarea></label>
+              <label>傷與疤<textarea id="bg_wound" rows="3"></textarea></label>
+              <label>恐懼症 / 狂躁症<textarea id="bg_phobia" rows="3"></textarea></label>
+              <label>奧秘典籍 / 咒文 / 器物<textarea id="bg_arcane" rows="3"></textarea></label>
+              <label>遭遇怪異實體<textarea id="bg_encounter" rows="3"></textarea></label>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section id="notes" class="tab-panel">
+        <div class="panel-grid">
+          <article class="card">
+            <h2>個人簡介</h2>
+            <textarea id="notes_profile" rows="8"></textarea>
+          </article>
+          <article class="card">
+            <h2>道具</h2>
+            <textarea id="notes_items" rows="8"></textarea>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>
