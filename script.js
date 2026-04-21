@@ -22,6 +22,7 @@ const fourFifthsDisplay = document.getElementById('derived_fourFifths');
 const saveBtn = document.getElementById('saveBtn');
 const clearBtn = document.getElementById('clearBtn');
 const statusMessage = document.getElementById('statusMessage');
+const ATTRIBUTE_CHECK_FIELDS = ['str', 'dex', 'int', 'con', 'app', 'pow', 'siz', 'edu', 'mov', 'luk'];
 
 function createSkillSlot(container, group, index) {
   const wrap = document.createElement('div');
@@ -65,6 +66,23 @@ function createSkillSlot(container, group, index) {
 
   selectLabel.appendChild(select);
   wrap.appendChild(selectLabel);
+
+  const checkLine = document.createElement('p');
+  checkLine.id = `check_skill_${group}_${index}`;
+  checkLine.className = 'check-line';
+  checkLine.textContent = '一般0 / 困難0 / 極難0';
+  wrap.appendChild(checkLine);
+
+  const valueLabel = document.createElement('label');
+  valueLabel.textContent = '技能數值';
+  const valueInput = document.createElement('input');
+  valueInput.type = 'number';
+  valueInput.inputMode = 'numeric';
+  valueInput.id = `skills_${group}_${index}_value`;
+  valueInput.addEventListener('input', () => updateSkillCheck(group, index));
+  valueLabel.appendChild(valueInput);
+  wrap.appendChild(valueLabel);
+
   wrap.appendChild(subWrap);
 
   container.appendChild(wrap);
@@ -94,6 +112,32 @@ function updateDerivedInfo() {
   fourFifthsDisplay.textContent = Number.isFinite(fourFifths) ? String(fourFifths) : '0';
 }
 
+function formatCheckText(value) {
+  const normal = Number(value || 0);
+  const hard = Math.floor(normal / 2);
+  const extreme = Math.floor(normal / 5);
+  return `一般${normal} / 困難${hard} / 極難${extreme}`;
+}
+
+function updateAttributeChecks() {
+  ATTRIBUTE_CHECK_FIELDS.forEach((field) => {
+    const value = getInputValue(`attr_${field}`);
+    const target = document.getElementById(`check_attr_${field}`);
+    if (target) target.textContent = formatCheckText(value);
+  });
+}
+
+function updateSkillCheck(group, index) {
+  const value = getInputValue(`skills_${group}_${index}_value`);
+  const target = document.getElementById(`check_skill_${group}_${index}`);
+  if (target) target.textContent = formatCheckText(value);
+}
+
+function updateAllSkillChecks() {
+  for (let i = 0; i < 8; i += 1) updateSkillCheck('occupation', i);
+  for (let i = 0; i < 4; i += 1) updateSkillCheck('interest', i);
+}
+
 function getInputValue(id) {
   const el = document.getElementById(id);
   return el ? el.value : '';
@@ -111,14 +155,16 @@ function gatherFormData() {
   for (let i = 0; i < 8; i += 1) {
     occupationSkills.push({
       skill: getInputValue(`skills_occupation_${i}`),
-      subSkill: getInputValue(`skills_occupation_${i}_sub`)
+      subSkill: getInputValue(`skills_occupation_${i}_sub`),
+      value: getInputValue(`skills_occupation_${i}_value`)
     });
   }
 
   for (let i = 0; i < 4; i += 1) {
     interestSkills.push({
       skill: getInputValue(`skills_interest_${i}`),
-      subSkill: getInputValue(`skills_interest_${i}_sub`)
+      subSkill: getInputValue(`skills_interest_${i}_sub`),
+      value: getInputValue(`skills_interest_${i}_value`)
     });
   }
 
@@ -201,13 +247,17 @@ function fillFormFromData(data) {
   for (let i = 0; i < 8; i += 1) {
     setInputValue(`skills_occupation_${i}`, occupation[i]?.skill || '');
     setInputValue(`skills_occupation_${i}_sub`, occupation[i]?.subSkill || '');
+    setInputValue(`skills_occupation_${i}_value`, occupation[i]?.value || '');
     toggleSubSkillInput('occupation', i);
+    updateSkillCheck('occupation', i);
   }
 
   for (let i = 0; i < 4; i += 1) {
     setInputValue(`skills_interest_${i}`, interest[i]?.skill || '');
     setInputValue(`skills_interest_${i}_sub`, interest[i]?.subSkill || '');
+    setInputValue(`skills_interest_${i}_value`, interest[i]?.value || '');
     toggleSubSkillInput('interest', i);
+    updateSkillCheck('interest', i);
   }
 
   setInputValue('skills_creditRating', data.skills?.creditRating);
@@ -228,6 +278,7 @@ function fillFormFromData(data) {
   setInputValue('notes_items', data.notes?.items);
 
   updateDerivedInfo();
+  updateAttributeChecks();
 }
 
 function clearAllInputs() {
@@ -239,6 +290,8 @@ function clearAllInputs() {
   for (let i = 0; i < 4; i += 1) toggleSubSkillInput('interest', i);
 
   updateDerivedInfo();
+  updateAttributeChecks();
+  updateAllSkillChecks();
 }
 
 function showStatus(message) {
@@ -280,6 +333,10 @@ function loadSavedData() {
 
 function setupActions() {
   statusSanInitialInput.addEventListener('input', updateDerivedInfo);
+  ATTRIBUTE_CHECK_FIELDS.forEach((field) => {
+    const input = document.getElementById(`attr_${field}`);
+    if (input) input.addEventListener('input', updateAttributeChecks);
+  });
 
   saveBtn.addEventListener('click', () => {
     const data = gatherFormData();
@@ -302,6 +359,8 @@ function init() {
   setupTabs();
   setupActions();
   updateDerivedInfo();
+  updateAttributeChecks();
+  updateAllSkillChecks();
   loadSavedData();
 }
 

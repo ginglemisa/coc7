@@ -134,6 +134,11 @@ label {
   color: var(--muted);
 }
 
+.check-line {
+  font-size: 0.76rem;
+  color: #4c5568;
+}
+
 input,
 select,
 textarea {
@@ -164,6 +169,10 @@ textarea {
   border: 1px dashed var(--border);
   border-radius: 0.4rem;
   padding: 0.35rem;
+}
+
+.skill-slot .check-line {
+  margin: 0.1rem 0 0.2rem;
 }
 
 .subskill-wrap {
