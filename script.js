@@ -2,7 +2,7 @@ const STORAGE_KEY = 'coc7CharacterCardData';
 
 // 可集中維護的技能清單（顯示文字含基礎值）
 const SKILLS = [
-  '會計(05)', '人類學(01)', '估價(05)', '考古學(01)', '魅惑(15)', '攀爬(20)', '信用評級(00)',
+  '會計(05)', '人類學(01)', '估價(05)', '考古學(01)', '魅惑(15)', '攀爬(20)', '電腦使用(05)', '信用評級(00)',
   '克蘇魯神話(00)', '偽裝(05)', '閃避(DEX/2)', '開車(20)', '電子維修(10)', '話術(05)', '法律(05)',
   '圖書館使用(20)', '聆聽(20)', '鎖匠(01)', '機械維修(10)', '醫藥(01)', '自然世界(10)', '導航(10)',
   '神秘學(05)', '操作重機(01)', '說服(10)', '駕駛(01)', '心理學(10)', '精神分析(01)', '騎術(05)',
@@ -13,7 +13,8 @@ const SKILLS = [
 ];
 
 // 需要顯示分項輸入欄的分類技能（只比對前綴）
-const CATEGORIZED_PREFIXES = ['藝術/工藝', '戰鬥', '火器', '駕駛', '科學', '生存'];
+const CATEGORIZED_PREFIXES = ['藝術/工藝', '戰鬥', '火器', '駕駛', '科學', '生存', '語言(其他)'];
+const SUBSKILL_HIDDEN_EXACT = ['戰鬥(徒手)(25)', '火器(手槍)(20)', '火器(步槍/霰彈槍)(25)'];
 
 const occupationContainer = document.getElementById('occupationSkills');
 const interestContainer = document.getElementById('interestSkills');
@@ -22,7 +23,7 @@ const fourFifthsDisplay = document.getElementById('derived_fourFifths');
 const saveBtn = document.getElementById('saveBtn');
 const clearBtn = document.getElementById('clearBtn');
 const statusMessage = document.getElementById('statusMessage');
-const ATTRIBUTE_CHECK_FIELDS = ['str', 'dex', 'int', 'con', 'app', 'pow', 'siz', 'edu', 'mov', 'luk'];
+const ATTRIBUTE_CHECK_FIELDS = ['str', 'dex', 'int', 'con', 'app', 'pow', 'siz', 'edu'];
 
 function createSkillSlot(container, group, index) {
   const wrap = document.createElement('div');
@@ -93,7 +94,8 @@ function toggleSubSkillInput(group, index) {
   const subWrap = document.getElementById(`sub_wrap_${group}_${index}`);
   const selected = select.value;
 
-  const needsSubSkill = CATEGORIZED_PREFIXES.some((prefix) => selected.startsWith(prefix));
+  const hasCategorizedPrefix = CATEGORIZED_PREFIXES.some((prefix) => selected.startsWith(prefix));
+  const needsSubSkill = hasCategorizedPrefix && !SUBSKILL_HIDDEN_EXACT.includes(selected);
   subWrap.classList.toggle('hidden', !needsSubSkill);
 }
 
@@ -110,6 +112,49 @@ function updateDerivedInfo() {
   const sanInitial = Number(statusSanInitialInput.value || 0);
   const fourFifths = Math.floor((sanInitial * 4) / 5);
   fourFifthsDisplay.textContent = Number.isFinite(fourFifths) ? String(fourFifths) : '0';
+}
+
+function getDerivedBuildAndDamageBonus(sumStrSiz) {
+  if (sumStrSiz <= 64) return { build: '-2', damageBonus: '-2' };
+  if (sumStrSiz <= 84) return { build: '-1', damageBonus: '-1' };
+  if (sumStrSiz <= 124) return { build: '0', damageBonus: '0' };
+  if (sumStrSiz <= 164) return { build: '1', damageBonus: '+1D4' };
+  if (sumStrSiz <= 204) return { build: '2', damageBonus: '+1D6' };
+
+  const extra = Math.ceil((sumStrSiz - 204) / 80);
+  return { build: String(2 + extra), damageBonus: `+${1 + extra}D6` };
+}
+
+function calculateMov(str, dex, siz, age) {
+  let mov = 8;
+  if (dex < siz && str < siz) mov = 7;
+  if (dex > siz && str > siz) mov = 9;
+
+  const numericAge = Number(age);
+  if (!Number.isFinite(numericAge) || numericAge < 40) return mov;
+
+  const agePenalty = Math.min(5, Math.floor((numericAge - 40) / 10) + 1);
+  return Math.max(1, mov - agePenalty);
+}
+
+function updateAutoCalculatedStats() {
+  const str = Number(getInputValue('attr_str') || 0);
+  const con = Number(getInputValue('attr_con') || 0);
+  const pow = Number(getInputValue('attr_pow') || 0);
+  const siz = Number(getInputValue('attr_siz') || 0);
+  const dex = Number(getInputValue('attr_dex') || 0);
+  const age = Number(getInputValue('basic_age') || 0);
+
+  const hpMax = Math.floor((con + siz) / 10);
+  const mpMax = Math.floor(pow / 5);
+  const mov = calculateMov(str, dex, siz, age);
+  const { build, damageBonus } = getDerivedBuildAndDamageBonus(str + siz);
+
+  setInputValue('status_hpMax', String(Math.max(hpMax, 0)));
+  setInputValue('status_mpMax', String(Math.max(mpMax, 0)));
+  setInputValue('attr_mov', String(Math.max(mov, 0)));
+  setInputValue('attr_build', build);
+  setInputValue('attr_damageBonus', damageBonus);
 }
 
 function formatCheckText(value) {
@@ -279,6 +324,7 @@ function fillFormFromData(data) {
 
   updateDerivedInfo();
   updateAttributeChecks();
+  updateAutoCalculatedStats();
 }
 
 function clearAllInputs() {
@@ -292,6 +338,7 @@ function clearAllInputs() {
   updateDerivedInfo();
   updateAttributeChecks();
   updateAllSkillChecks();
+  updateAutoCalculatedStats();
 }
 
 function showStatus(message) {
@@ -333,9 +380,13 @@ function loadSavedData() {
 
 function setupActions() {
   statusSanInitialInput.addEventListener('input', updateDerivedInfo);
+  document.getElementById('basic_age')?.addEventListener('input', updateAutoCalculatedStats);
   ATTRIBUTE_CHECK_FIELDS.forEach((field) => {
     const input = document.getElementById(`attr_${field}`);
-    if (input) input.addEventListener('input', updateAttributeChecks);
+    if (input) {
+      input.addEventListener('input', updateAttributeChecks);
+      input.addEventListener('input', updateAutoCalculatedStats);
+    }
   });
 
   saveBtn.addEventListener('click', () => {
@@ -361,6 +412,7 @@ function init() {
   updateDerivedInfo();
   updateAttributeChecks();
   updateAllSkillChecks();
+  updateAutoCalculatedStats();
   loadSavedData();
 }
 
