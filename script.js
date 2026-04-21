@@ -1,4 +1,7 @@
-const STORAGE_KEY = 'coc7CharacterCardData';
+const STORAGE_KEY = 'coc7_sheet_autosave_v1';
+const SHARE_HASH_PREFIX = '#s=';
+const STATE_VERSION = 1;
+let SHARE_MODE = false;
 
 // 可集中維護的技能清單（顯示文字含基礎值）
 const SKILLS = [
@@ -193,6 +196,131 @@ function setInputValue(id, value) {
   if (el) el.value = value ?? '';
 }
 
+function refreshDerivedUI() {
+  updateDerivedInfo();
+  updateAttributeChecks();
+  updateAllSkillChecks();
+  updateAutoCalculatedStats();
+}
+
+function collectState() {
+  const fields = {};
+  document.querySelectorAll('input, select, textarea').forEach((el) => {
+    if (!el.id) return;
+    fields[el.id] = el.type === 'checkbox' ? Boolean(el.checked) : String(el.value ?? '');
+  });
+
+  return {
+    version: STATE_VERSION,
+    fields
+  };
+}
+
+function applyState(state) {
+  if (!state || typeof state !== 'object' || !state.version || !state.fields || typeof state.fields !== 'object') {
+    return;
+  }
+
+  Object.entries(state.fields).forEach(([id, value]) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+
+    if (el.type === 'checkbox') {
+      el.checked = Boolean(value);
+    } else {
+      el.value = value == null ? '' : String(value);
+    }
+
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+
+  refreshDerivedUI();
+}
+
+function encodeUtf8ToBase64(text) {
+  const bytes = new TextEncoder().encode(text);
+  let binary = '';
+  bytes.forEach((b) => {
+    binary += String.fromCharCode(b);
+  });
+  return btoa(binary);
+}
+
+function decodeBase64ToUtf8(base64Text) {
+  const binary = atob(base64Text);
+  const bytes = Uint8Array.from(binary, (ch) => ch.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
+}
+
+function encodeStateToHash(state) {
+  const json = JSON.stringify(state);
+  const payload = encodeUtf8ToBase64(json);
+  return `${SHARE_HASH_PREFIX}${payload}`;
+}
+
+function decodeStateFromHash() {
+  const hash = window.location.hash || '';
+  if (!hash.startsWith(SHARE_HASH_PREFIX)) return null;
+
+  try {
+    const payload = hash.slice(SHARE_HASH_PREFIX.length);
+    const jsonText = decodeBase64ToUtf8(payload);
+    const parsed = JSON.parse(jsonText);
+
+    if (!parsed || typeof parsed !== 'object' || !('version' in parsed) || !('fields' in parsed) || typeof parsed.fields !== 'object') {
+      throw new Error('state 格式不正確');
+    }
+
+    if (parsed.version !== STATE_VERSION) {
+      console.warn(`state version 不符：${parsed.version}`);
+      return null;
+    }
+
+    return parsed;
+  } catch (error) {
+    console.error('hash decode/parse 失敗', error);
+    return null;
+  }
+}
+
+function saveToLocal() {
+  if (SHARE_MODE) return;
+  const state = collectState();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function restoreFromLocal() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return false;
+
+  try {
+    const parsed = JSON.parse(raw);
+    applyState(parsed);
+    return true;
+  } catch (error) {
+    console.error('localStorage restore 失敗', error);
+    return false;
+  }
+}
+
+async function copyShareUrl() {
+  const state = collectState();
+  const hash = encodeStateToHash(state);
+  const fullUrl = `${window.location.origin}${window.location.pathname}${window.location.search}${hash}`;
+
+  if (fullUrl.length > 4000) {
+    window.alert('網址過長可能不穩定');
+  }
+
+  try {
+    await navigator.clipboard.writeText(fullUrl);
+    showStatus('分享網址已複製');
+  } catch (error) {
+    window.prompt('請手動複製分享網址：', fullUrl);
+  }
+}
+
 function gatherFormData() {
   const occupationSkills = [];
   const interestSkills = [];
@@ -365,19 +493,6 @@ function setupTabs() {
   });
 }
 
-function loadSavedData() {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if (!raw) return;
-
-  try {
-    const parsed = JSON.parse(raw);
-    fillFormFromData(parsed);
-    showStatus('已載入已儲存資料');
-  } catch (error) {
-    console.error('資料解析失敗', error);
-  }
-}
-
 function setupActions() {
   statusSanInitialInput.addEventListener('input', updateDerivedInfo);
   document.getElementById('basic_age')?.addEventListener('input', updateAutoCalculatedStats);
@@ -390,8 +505,7 @@ function setupActions() {
   });
 
   saveBtn.addEventListener('click', () => {
-    const data = gatherFormData();
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    saveToLocal();
     showStatus('已儲存');
   });
 
@@ -403,17 +517,40 @@ function setupActions() {
     localStorage.removeItem(STORAGE_KEY);
     showStatus('已清除');
   });
+
+  document.querySelectorAll('input, select, textarea').forEach((el) => {
+    el.addEventListener('input', saveToLocal);
+    el.addEventListener('change', saveToLocal);
+  });
+
+  const shareBtn = document.getElementById('shareBtn');
+  if (shareBtn) {
+    shareBtn.addEventListener('click', copyShareUrl);
+  }
+}
+
+function boot() {
+  const hashState = decodeStateFromHash();
+  if (hashState) {
+    SHARE_MODE = true;
+    applyState(hashState);
+    console.log('已從分享網址還原角色卡');
+    return;
+  }
+
+  if (window.location.hash.startsWith(SHARE_HASH_PREFIX)) {
+    console.error('分享網址解析失敗，改為讀取本機資料');
+  }
+
+  restoreFromLocal();
 }
 
 function init() {
   initSkillsUI();
   setupTabs();
   setupActions();
-  updateDerivedInfo();
-  updateAttributeChecks();
-  updateAllSkillChecks();
-  updateAutoCalculatedStats();
-  loadSavedData();
+  refreshDerivedUI();
+  boot();
 }
 
 init();
