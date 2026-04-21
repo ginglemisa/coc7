@@ -23,6 +23,7 @@ const occupationContainer = document.getElementById('occupationSkills');
 const interestContainer = document.getElementById('interestSkills');
 const statusSanInitialInput = document.getElementById('status_sanInitial');
 const fourFifthsDisplay = document.getElementById('derived_fourFifths');
+const shareBtn = document.getElementById('shareBtn');
 const saveBtn = document.getElementById('saveBtn');
 const clearBtn = document.getElementById('clearBtn');
 const statusMessage = document.getElementById('statusMessage');
@@ -523,7 +524,6 @@ function setupActions() {
     el.addEventListener('change', saveToLocal);
   });
 
-  const shareBtn = document.getElementById('shareBtn');
   if (shareBtn) {
     shareBtn.addEventListener('click', copyShareUrl);
   }
