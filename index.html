@@ -47,10 +47,10 @@
               <label>POW <span id="check_attr_pow" class="check-line">一般0 / 困難0 / 極難0</span><input type="number" inputmode="numeric" id="attr_pow" /></label>
               <label>SIZ <span id="check_attr_siz" class="check-line">一般0 / 困難0 / 極難0</span><input type="number" inputmode="numeric" id="attr_siz" /></label>
               <label>EDU <span id="check_attr_edu" class="check-line">一般0 / 困難0 / 極難0</span><input type="number" inputmode="numeric" id="attr_edu" /></label>
-              <label>MOV <span id="check_attr_mov" class="check-line">一般0 / 困難0 / 極難0</span><input type="number" inputmode="numeric" id="attr_mov" /></label>
-              <label>LUK <span id="check_attr_luk" class="check-line">一般0 / 困難0 / 極難0</span><input type="number" inputmode="numeric" id="attr_luk" /></label>
-              <label>Damage Bonus<input type="text" id="attr_damageBonus" /></label>
-              <label>體格<input type="text" id="attr_build" /></label>
+              <label>MOV<input type="number" inputmode="numeric" id="attr_mov" readonly /></label>
+              <label>LUK<input type="number" inputmode="numeric" id="attr_luk" /></label>
+              <label>Damage Bonus<input type="text" id="attr_damageBonus" readonly /></label>
+              <label>體格<input type="text" id="attr_build" readonly /></label>
             </div>
           </article>
 
@@ -58,10 +58,10 @@
             <h2>狀態數值</h2>
             <div class="grid cols-3 compact">
               <label>HP 現值<input type="number" inputmode="numeric" id="status_hpCurrent" /></label>
-              <label>HP 最大值<input type="number" inputmode="numeric" id="status_hpMax" /></label>
+              <label>HP 最大值<input type="number" inputmode="numeric" id="status_hpMax" readonly /></label>
               <span class="spacer" aria-hidden="true"></span>
               <label>MP 現值<input type="number" inputmode="numeric" id="status_mpCurrent" /></label>
-              <label>MP 最大值<input type="number" inputmode="numeric" id="status_mpMax" /></label>
+              <label>MP 最大值<input type="number" inputmode="numeric" id="status_mpMax" readonly /></label>
               <span class="spacer" aria-hidden="true"></span>
               <label>SAN 現值<input type="number" inputmode="numeric" id="status_sanCurrent" /></label>
               <label>SAN 最大值<input type="number" inputmode="numeric" id="status_sanMax" /></label>
